@@ -7,6 +7,7 @@ import json
 import sys
 import traceback
 import smtplib
+import logging
 
 from email.mime.text import MIMEText
 
@@ -158,12 +159,16 @@ def sched_generous( config, ncinfo, req ):
 
 def notify_failure(config, ncinfo, req, extra=None):
     """Email somebody if we can't schedule a node"""
-    msg_str = str(config)
-    msg_str += "\n"
-    msg_str += str(ncinfo)
-    msg_str += "\n"
-    msg_str += str(req)
-    msg_str += "\n"
+    msg_str = ""
+    msg_str += "Bobsleigh configuration:\n\n"
+    msg_str += json.dumps(config, indent=4)
+    msg_str += "\n\n\n\n"
+    msg_str += "NC status from CC:\n\n"
+    msg_str += json.dumps(ncinfo, indent=4)
+    msg_str += "\n\n\n\n"
+    msg_str += "User request:\n\n"
+    msg_str += json.dumps(req, indent=4)
+    msg_str += "\n\n\n\n"
 
     if extra != None:
         msg_str += extra
@@ -171,15 +176,19 @@ def notify_failure(config, ncinfo, req, extra=None):
     msg = MIMEText(msg_str)
     msg['Subject'] = 'Instance start Failure'
     msg['From'] = "root@localhost"
-    msg['To'] = config['mailto']
+    msg['To'] = ", ".join(config['mailto'])
     s = smtplib.SMTP('localhost')
-    s.sendmail(msg['From'], [msg['To']], msg.as_string())
+    s.sendmail(msg['From'], config['mailto'], msg.as_string())
     s.quit()       
 
 def main(config):
     """ Format is fixed and defined in cluster/handlers.c"""
     if len(sys.argv) != 9:
         exit(0)
+
+    # Log something to /var/log/eucalyptus ??
+    # logging.basicConfig(filename='/tmp/bobsleigh.log', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+    # logging.debug('Running bobsleigh')
 
     cmd = sys.argv[0]
     ncfile = sys.argv[1]
@@ -229,3 +238,5 @@ if __name__ == "__main__":
         if "mailto" in config:
             notify_failure(config, {}, {}, msg.as_string())
         exit(0)
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4 autoindent smarttab
