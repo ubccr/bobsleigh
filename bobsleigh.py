@@ -113,7 +113,7 @@ def find_candidates( config, ncinfo, req ):
 
     candidates={}
     for key, value in ncinfo.iteritems():
-        if match_reqs(req, config['nodecontrollers'][key]):
+        if key in config['nodecontrollers'] and match_reqs(req, config['nodecontrollers'][key]):
             if has_resources( req, value ):
                 candidates[key]=value
 
